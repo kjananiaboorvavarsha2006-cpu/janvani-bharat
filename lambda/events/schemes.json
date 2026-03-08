@@ -1,0 +1,11 @@
+{
+  "httpMethod": "GET",
+  "path": "/schemes",
+  "queryStringParameters": {
+    "state": "All India",
+    "limit": "10"
+  },
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}

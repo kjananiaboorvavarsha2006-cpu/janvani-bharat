@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/eligibility",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"age\":30,\"income\":200000,\"occupation\":\"farmer\",\"state\":\"Maharashtra\",\"category\":\"General\",\"gender\":\"male\",\"area\":\"rural\"}"
+}

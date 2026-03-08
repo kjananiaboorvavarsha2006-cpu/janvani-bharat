@@ -1,0 +1,234 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: JanVani Bharat - Government Scheme Discovery Platform
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs18.x
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        DYNAMODB_TABLE_NAME: !Ref SchemesTable
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+
+Resources:
+  # DynamoDB Table for Schemes
+  SchemesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Environment}-schemes
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: schemeId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: schemeId
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: JanVani-Bharat
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${Environment}-janvani-api
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        ApiKeyRequired: false
+
+  # Lambda Functions
+
+  # Schemes Function
+  SchemesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-janvani-schemes
+      CodeUri: ./handlers
+      Handler: schemes.handler
+      Description: Handle scheme operations (GET, filter, search)
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SchemesTable
+      Events:
+        GetAllSchemes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /schemes
+            Method: GET
+        GetSchemeById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /schemes/{id}
+            Method: GET
+        GetEligibleSchemes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /schemes/eligible
+            Method: POST
+
+  # Eligibility Function
+  EligibilityFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-janvani-eligibility
+      CodeUri: ./handlers
+      Handler: eligibility.handler
+      Description: Check user eligibility for schemes
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SchemesTable
+      Events:
+        CheckEligibility:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /eligibility
+            Method: POST
+
+  # Chat Function (AI Chatbot)
+  ChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-janvani-chat
+      CodeUri: ./handlers
+      Handler: chat.handler
+      Description: AI chatbot using AWS Bedrock
+      Timeout: 60
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - translate:TranslateText
+              Resource: '*'
+      Events:
+        ChatEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chat
+            Method: POST
+
+  # Voice Function (Text-to-Speech)
+  VoiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-janvani-voice
+      CodeUri: ./handlers
+      Handler: voice.handler
+      Description: Text-to-speech using AWS Polly
+      Timeout: 60
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - polly:SynthesizeSpeech
+              Resource: '*'
+      Events:
+        SynthesizeEndpoint:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /voice/synthesize
+            Method: POST
+
+  # Database Seeder Function
+  DatabaseSeederFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-janvani-db-seeder
+      CodeUri: ./handlers
+      Handler: dbSeeder.handler
+      Description: Seed DynamoDB with initial scheme data
+      Timeout: 300
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SchemesTable
+
+  # CloudWatch Log Groups
+  SchemesLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Environment}-janvani-schemes
+      RetentionInDays: 7
+
+  EligibilityLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Environment}-janvani-eligibility
+      RetentionInDays: 7
+
+  ChatLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Environment}-janvani-chat
+      RetentionInDays: 7
+
+  VoiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Environment}-janvani-voice
+      RetentionInDays: 7
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub ${Environment}-ApiEndpoint
+
+  SchemesTableName:
+    Description: DynamoDB table name for schemes
+    Value: !Ref SchemesTable
+    Export:
+      Name: !Sub ${Environment}-SchemesTableName
+
+  SchemesTableArn:
+    Description: DynamoDB table ARN
+    Value: !GetAtt SchemesTable.Arn
+    Export:
+      Name: !Sub ${Environment}-SchemesTableArn
+
+  SchemesFunctionArn:
+    Description: Schemes Lambda Function ARN
+    Value: !GetAtt SchemesFunction.Arn
+
+  EligibilityFunctionArn:
+    Description: Eligibility Lambda Function ARN
+    Value: !GetAtt EligibilityFunction.Arn
+
+  ChatFunctionArn:
+    Description: Chat Lambda Function ARN
+    Value: !GetAtt ChatFunction.Arn
+
+  VoiceFunctionArn:
+    Description: Voice Lambda Function ARN
+    Value: !GetAtt VoiceFunction.Arn

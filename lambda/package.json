@@ -1,0 +1,29 @@
+{
+  "name": "janvani-bharat-lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda functions for JanVani Bharat",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'No build step required for Lambda'",
+    "deploy": "sam deploy --guided",
+    "deploy:dev": "sam deploy --config-env dev",
+    "deploy:prod": "sam deploy --config-env prod",
+    "local": "sam local start-api",
+    "invoke:schemes": "sam local invoke SchemesFunction -e events/schemes.json",
+    "invoke:eligibility": "sam local invoke EligibilityFunction -e events/eligibility.json",
+    "invoke:seeder": "sam local invoke DatabaseSeederFunction",
+    "logs:schemes": "sam logs -n SchemesFunction --tail",
+    "logs:eligibility": "sam logs -n EligibilityFunction --tail"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.709.0",
+    "@aws-sdk/client-dynamodb": "^3.709.0",
+    "@aws-sdk/client-polly": "^3.709.0",
+    "@aws-sdk/client-translate": "^3.709.0",
+    "@aws-sdk/lib-dynamodb": "^3.709.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
