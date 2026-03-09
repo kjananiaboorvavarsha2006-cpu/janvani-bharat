@@ -180,7 +180,5 @@ MIT License
 
 ---
 
-**Built with ❤️ for Indian citizens**
-=======
 # janvani-bharat-scheme-eligibility
->>>>>>> cf1e8c8d5b49e03bca6df07fc13b4c16b9348f52
+
