@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # JanVani Bharat – AI-Powered Government Scheme Discovery Platform
 
 ## 🇮🇳 Overview
@@ -22,12 +23,15 @@ JanVani Bharat is an advanced AI-powered platform that helps Indian citizens dis
 ### Installation
 
 ```bash
-# Install dependencies
-npm install
+# Install all dependencies (root, frontend, and backend)
+npm run install:all
 
 # Copy environment files
-cp .env.example .env
-cp .env.local.example .env.local
+cp backend/.env.example backend/.env
+cp frontend/.env.local.example frontend/.env.local
+
+# Setup DynamoDB
+npm run setup:db
 
 # Run the application
 npm run dev:all
@@ -36,6 +40,16 @@ npm run dev:all
 The app will be available at:
 - Frontend: http://localhost:8080
 - Backend: http://localhost:3001
+
+## Project Structure
+
+```
+janvani-bharat/
+├── frontend/          # React + Vite frontend
+├── backend/           # Express.js backend
+├── lambda/            # AWS Lambda functions
+└── package.json       # Root scripts for running both
+```
 
 ## 📚 Documentation
 
@@ -52,13 +66,14 @@ The app will be available at:
 ## 📦 Available Scripts
 
 ```bash
+npm run install:all  # Install dependencies for all packages
 npm run dev          # Start frontend only
 npm run server       # Start backend only
 npm run dev:all      # Start both frontend and backend
 npm run setup:db     # Setup DynamoDB table with sample data
-npm run build        # Build for production
-npm run lint         # Run ESLint
-npm run test         # Run tests
+npm run build        # Build frontend for production
+npm run lint         # Run ESLint on frontend
+npm run test         # Run frontend tests
 ```
 
 ## 🎯 Features in Detail
@@ -89,7 +104,7 @@ npm run test         # Run tests
 
 ### Environment Variables
 
-**Backend (.env):**
+**Backend (backend/.env):**
 ```env
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your_key
@@ -98,7 +113,7 @@ DYNAMODB_TABLE_NAME=schemes
 PORT=3001
 ```
 
-**Frontend (.env.local):**
+**Frontend (frontend/.env.local):**
 ```env
 VITE_API_URL=http://localhost:3001
 ```
@@ -139,12 +154,14 @@ Fully responsive layout optimized for:
 ### Frontend
 - Deploy to Vercel, Netlify, or AWS Amplify
 - Build command: `npm run build`
-- Output directory: `dist`
+- Output directory: `frontend/dist`
+- Root directory: `frontend`
 
 ### Backend
 - Deploy to AWS EC2, ECS, or Lambda
 - Ensure AWS credentials are configured
 - Set environment variables
+- Root directory: `backend`
 
 ## 🤝 Contributing
 
@@ -164,3 +181,6 @@ MIT License
 ---
 
 **Built with ❤️ for Indian citizens**
+=======
+# janvani-bharat-scheme-eligibility
+>>>>>>> cf1e8c8d5b49e03bca6df07fc13b4c16b9348f52

@@ -101,11 +101,23 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
       };
 
       setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
+      console.error('Error details:', error.response?.data);
+      
+      let errorText = 'Sorry, I encountered an error. ';
+      
+      if (error.response?.data?.error) {
+        errorText += error.response.data.error;
+      } else if (error.message) {
+        errorText += error.message;
+      } else {
+        errorText += 'Please make sure the backend server is running on http://localhost:3001';
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Sorry, I encountered an error. Please try again.',
+        text: errorText,
         sender: 'bot',
         timestamp: new Date()
       };
@@ -140,12 +152,40 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
         language
       });
 
-      const audio = new Audio(`data:audio/mpeg;base64,${response.data.audio}`);
-      audio.onended = () => setIsSpeaking(false);
-      audio.play();
+      // Check if we should use browser TTS
+      if (response.data.useBrowserTTS) {
+        // Use Web Speech API as fallback
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = language === 'hindi' ? 'hi-IN' : language === 'tamil' ? 'ta-IN' : 'en-IN';
+          utterance.onend = () => setIsSpeaking(false);
+          utterance.onerror = () => setIsSpeaking(false);
+          window.speechSynthesis.speak(utterance);
+        } else {
+          console.log('Text-to-speech not supported');
+          setIsSpeaking(false);
+        }
+      } else if (response.data.audio) {
+        // Use AWS Polly audio
+        const audio = new Audio(`data:audio/mpeg;base64,${response.data.audio}`);
+        audio.onended = () => setIsSpeaking(false);
+        audio.onerror = () => setIsSpeaking(false);
+        audio.play();
+      } else {
+        setIsSpeaking(false);
+      }
     } catch (error) {
       console.error('TTS error:', error);
-      setIsSpeaking(false);
+      // Fallback to browser TTS on error
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = language === 'hindi' ? 'hi-IN' : language === 'tamil' ? 'ta-IN' : 'en-IN';
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setIsSpeaking(false);
+      }
     }
   };
 

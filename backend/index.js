@@ -23,6 +23,32 @@ app.use('/api/eligibility', eligibilityRoutes);
 app.use('/api/schemes', schemesRoutes);
 app.use('/api/voice', voiceRoutes);
 
+// Root endpoint - API info
+app.get('/', (req, res) => {
+  res.json({
+    name: 'JanVani Bharat API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      schemes: {
+        getAll: 'GET /api/schemes',
+        getById: 'GET /api/schemes/:id'
+      },
+      eligibility: {
+        check: 'POST /api/eligibility'
+      },
+      chat: {
+        send: 'POST /api/chat'
+      },
+      voice: {
+        synthesize: 'POST /api/voice/synthesize'
+      }
+    },
+    documentation: 'See README.md for API documentation'
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'JanVani Bharat API is running' });
