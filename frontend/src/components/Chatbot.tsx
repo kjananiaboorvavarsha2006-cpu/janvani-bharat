@@ -12,30 +12,26 @@ interface Message {
   timestamp: Date;
 }
 
+import type { Language } from '@/lib/translations';
+import { t } from '@/lib/translations';
+
 interface ChatbotProps {
-  language?: 'english' | 'hindi' | 'tamil';
+  language?: Language;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'https://j639b8j9tk.execute-api.us-east-1.amazonaws.com/prod';
+const CHAT_ENDPOINT = `${API_URL}/prod-janvani-chat`;
 
 export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const tr = t(language);
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: language === 'hindi' 
-        ? 'नमस्ते! मैं जनवाणी भारत AI सहायक हूं। मैं सरकारी योजनाओं के बारे में आपकी मदद कर सकता हूं।'
-        : language === 'tamil'
-        ? 'வணக்கம்! நான் ஜன்வாணி பாரத் AI உதவியாளர். அரசு திட்டங்கள் பற்றி உங்களுக்கு உதவ முடியும்.'
-        : 'Hello! I\'m JanVani Bharat AI Assistant. I can help you with government schemes.',
-      sender: 'bot',
-      timestamp: new Date()
-    }
+    { id: '1', text: tr.chatGreeting, sender: 'bot', timestamp: new Date() }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -88,7 +84,7 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/api/chat`, {
+      const response = await axios.post(CHAT_ENDPOINT, {
         message: input,
         language
       }, { timeout: 30000 });
@@ -152,51 +148,25 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
     }
   };
 
-  const handleTextToSpeech = async (text: string) => {
-    if (isSpeaking) return;
-
-    setIsSpeaking(true);
-    try {
-      const response = await axios.post(`${API_URL}/api/voice/synthesize`, {
-        text,
-        language
-      });
-
-      // Check if we should use browser TTS
-      if (response.data.useBrowserTTS) {
-        // Use Web Speech API as fallback
-        if ('speechSynthesis' in window) {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = language === 'hindi' ? 'hi-IN' : language === 'tamil' ? 'ta-IN' : 'en-IN';
-          utterance.onend = () => setIsSpeaking(false);
-          utterance.onerror = () => setIsSpeaking(false);
-          window.speechSynthesis.speak(utterance);
-        } else {
-          console.log('Text-to-speech not supported');
-          setIsSpeaking(false);
-        }
-      } else if (response.data.audio) {
-        // Use AWS Polly audio
-        const audio = new Audio(`data:audio/mpeg;base64,${response.data.audio}`);
-        audio.onended = () => setIsSpeaking(false);
-        audio.onerror = () => setIsSpeaking(false);
-        audio.play();
-      } else {
-        setIsSpeaking(false);
-      }
-    } catch (error) {
-      console.error('TTS error:', error);
-      // Fallback to browser TTS on error
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = language === 'hindi' ? 'hi-IN' : language === 'tamil' ? 'ta-IN' : 'en-IN';
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setIsSpeaking(false);
-      }
+  const handleTextToSpeech = (text: string, msgId: string) => {
+    // If already speaking this message, stop it
+    if (speakingId === msgId) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
     }
+    // Stop any current speech
+    window.speechSynthesis.cancel();
+
+    if (!('speechSynthesis' in window)) return;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language === 'hindi' ? 'hi-IN' : language === 'tamil' ? 'ta-IN' : 'en-IN';
+    utterance.rate = 0.9;
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+    setSpeakingId(msgId);
+    window.speechSynthesis.speak(utterance);
   };
 
   if (!isOpen) {
@@ -254,12 +224,11 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleTextToSpeech(msg.text)}
-                    className="mt-1 h-6 px-2 text-xs"
-                    disabled={isSpeaking}
+                    onClick={() => handleTextToSpeech(msg.text, msg.id)}
+                    className={`mt-1 h-6 px-2 text-xs ${speakingId === msg.id ? 'text-red-500' : ''}`}
                   >
                     <Volume2 className="w-3 h-3 mr-1" />
-                    {isSpeaking ? 'Playing...' : 'Listen'}
+                    {speakingId === msg.id ? 'Stop' : 'Listen'}
                   </Button>
                 )}
               </div>
@@ -291,13 +260,7 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={
-              language === 'hindi'
-                ? 'अपना सवाल पूछें...'
-                : language === 'tamil'
-                ? 'உங்கள் கேள்வியை கேளுங்கள்...'
-                : 'Ask your question...'
-            }
+            placeholder={tr.chatPlaceholder}
             className="flex-1"
             disabled={isLoading}
           />
