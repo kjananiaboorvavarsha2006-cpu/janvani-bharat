@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Shield, Globe, ArrowRight, Users, FileCheck, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Chatbot } from "@/components/Chatbot";
 import { SchemeMap } from "@/components/SchemeMap";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { t, type Language } from "@/lib/translations";
@@ -135,8 +134,6 @@ const LandingPage = () => {
           <p className="mt-1">{tr.footerSub}</p>
         </div>
       </footer>
-
-      <Chatbot language={language} />
     </div>
   );
 };

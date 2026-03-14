@@ -7,6 +7,7 @@ import LandingPage from "./pages/LandingPage";
 import EligibilityForm from "./pages/EligibilityForm";
 import ResultsDashboard from "./pages/ResultsDashboard";
 import NotFound from "./pages/NotFound";
+import { Chatbot } from "./components/Chatbot";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <Chatbot />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
