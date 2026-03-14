@@ -55,6 +55,7 @@ Resources:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
+        AllowCredentials: false
       Auth:
         ApiKeyRequired: false
 
@@ -76,19 +77,19 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
-            Path: /schemes
+            Path: /api/schemes
             Method: GET
         GetSchemeById:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
-            Path: /schemes/{id}
+            Path: /api/schemes/{id}
             Method: GET
         GetEligibleSchemes:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
-            Path: /schemes/eligible
+            Path: /api/schemes/eligible
             Method: POST
 
   # Eligibility Function
@@ -107,7 +108,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
-            Path: /eligibility
+            Path: /api/eligibility
             Method: POST
 
   # Chat Function (AI Chatbot)
@@ -134,7 +135,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
-            Path: /chat
+            Path: /api/chat
             Method: POST
 
   # Voice Function (Text-to-Speech)
@@ -157,7 +158,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
-            Path: /voice/synthesize
+            Path: /api/voice/synthesize
             Method: POST
 
   # Database Seeder Function

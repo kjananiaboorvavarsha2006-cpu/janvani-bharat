@@ -91,7 +91,7 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
       const response = await axios.post(`${API_URL}/api/chat`, {
         message: input,
         language
-      });
+      }, { timeout: 30000 });
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -103,16 +103,26 @@ export const Chatbot = ({ language = 'english' }: ChatbotProps) => {
       setMessages(prev => [...prev, botMessage]);
     } catch (error: any) {
       console.error('Chat error:', error);
-      console.error('Error details:', error.response?.data);
       
-      let errorText = 'Sorry, I encountered an error. ';
+      let errorText = '';
       
-      if (error.response?.data?.error) {
-        errorText += error.response.data.error;
-      } else if (error.message) {
-        errorText += error.message;
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorText = 'Request timed out. The AI is taking too long to respond. Please try again.';
+      } else if (error.response?.data?.error) {
+        const serverError = error.response.data.error;
+        if (serverError.includes('model access denied') || serverError.includes('Bedrock')) {
+          errorText = 'AI model is not enabled yet. Please enable "Amazon Nova Lite" in AWS Bedrock Model Access (us-east-1 region).';
+        } else {
+          errorText = `Server error: ${serverError}`;
+        }
+      } else if (error.response?.status === 403) {
+        errorText = 'Access denied. The AI model may not be enabled in AWS Bedrock. Please enable "Amazon Nova Lite" model access.';
+      } else if (error.response?.status === 500) {
+        errorText = `Server error: ${error.response.data?.message || 'Internal server error. Check Lambda logs.'}`;
+      } else if (error.message === 'Network Error') {
+        errorText = 'Cannot reach the server. Check that the API URL is configured correctly.';
       } else {
-        errorText += 'Please make sure the backend server is running on http://localhost:3001';
+        errorText = `Error: ${error.message || 'Unknown error occurred.'}`;
       }
       
       const errorMessage: Message = {
