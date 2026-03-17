@@ -83,7 +83,10 @@ const ResultsDashboard = () => {
                       <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-3 mb-3">
                         <p className="text-sm font-medium text-foreground">💡 {tr.benefits}: {scheme.benefits}</p>
                       </div>
-                      <a href={scheme.applyLink} target="_blank" rel="noopener noreferrer"
+                      <a
+                        href={scheme.applyLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-sm px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors font-medium">
                         {tr.applyNow} <ExternalLink className="w-3.5 h-3.5" />
                       </a>
